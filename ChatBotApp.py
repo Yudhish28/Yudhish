@@ -1,29 +1,29 @@
-# chatbot_app.py
+# ChatBotApp.py
 
 import streamlit as st
-import nltk
 import json
 import pickle
 import numpy as np
-from nltk.stem import WordNetLemmatizer
 from tensorflow.keras.models import load_model
+from nltk.stem import WordNetLemmatizer
+import nltk
 
-# Download NLTK resources (cached so it doesn’t re-run every time)
+# ✅ Download NLTK resources once, only if not already present
 @st.cache_resource
 def setup_nltk():
     nltk.download('punkt')
-    nltk.download('wordnet')  # Optional if you use WordNetLemmatizer
+    nltk.download('wordnet')
 
 setup_nltk()
-
-# Initialize lemmatizer
-lemmatizer = WordNetLemmatizer()
 
 # Load model and data
 model = load_model("chatbotmodel.h5")
 intents = json.load(open("breastCancer.json"))
 words = pickle.load(open("words.pkl", "rb"))
 classes = pickle.load(open("classes.pkl", "rb"))
+
+# Initialize lemmatizer
+lemmatizer = WordNetLemmatizer()
 
 # Preprocessing functions
 def clean_up_sentence(sentence):
@@ -47,10 +47,7 @@ def predict_class(sentence):
     ERROR_THRESHOLD = 0.25
     results = [[i, r] for i, r in enumerate(res) if r > ERROR_THRESHOLD]
     results.sort(key=lambda x: x[1], reverse=True)
-    return_list = []
-    for r in results:
-        return_list.append({"intent": classes[r[0]], "probability": str(r[1])})
-    return return_list
+    return [{"intent": classes[r[0]], "probability": str(r[1])} for r in results]
 
 # Get response
 def get_response(intents_list, intents_json):
