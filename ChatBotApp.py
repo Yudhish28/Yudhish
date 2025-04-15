@@ -1,6 +1,5 @@
 # chatbot_app.py
-# Download NLTK data
-nltk.download('punkt')
+
 import streamlit as st
 import nltk
 import json
@@ -9,7 +8,13 @@ import numpy as np
 from nltk.stem import WordNetLemmatizer
 from tensorflow.keras.models import load_model
 
+# Download NLTK resources (cached so it doesn’t re-run every time)
+@st.cache_resource
+def setup_nltk():
+    nltk.download('punkt')
+    nltk.download('wordnet')  # Optional if you use WordNetLemmatizer
 
+setup_nltk()
 
 # Initialize lemmatizer
 lemmatizer = WordNetLemmatizer()
