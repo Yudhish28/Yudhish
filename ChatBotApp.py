@@ -4,28 +4,27 @@ import streamlit as st
 import json
 import pickle
 import numpy as np
-from tensorflow.keras.models import load_model
-from nltk.stem import WordNetLemmatizer
-import nltk
 
-# ✅ Download NLTK resources once, only if not already present
+# Lazy-load NLTK
+import nltk
+from nltk.stem import WordNetLemmatizer
+
 @st.cache_resource
 def setup_nltk():
     nltk.download('punkt')
     nltk.download('wordnet')
-
 setup_nltk()
 
-# Load model and data
+# Load model and assets
+from tensorflow.keras.models import load_model
+
 model = load_model("chatbotmodel.h5")
 intents = json.load(open("breastCancer.json"))
 words = pickle.load(open("words.pkl", "rb"))
 classes = pickle.load(open("classes.pkl", "rb"))
 
-# Initialize lemmatizer
 lemmatizer = WordNetLemmatizer()
 
-# Preprocessing functions
 def clean_up_sentence(sentence):
     sentence_words = nltk.word_tokenize(sentence)
     sentence_words = [lemmatizer.lemmatize(word.lower()) for word in sentence_words]
@@ -40,7 +39,6 @@ def bag_of_words(sentence):
                 bag[i] = 1
     return np.array(bag)
 
-# Predict class
 def predict_class(sentence):
     bow = bag_of_words(sentence)
     res = model.predict(np.array([bow]))[0]
@@ -49,7 +47,6 @@ def predict_class(sentence):
     results.sort(key=lambda x: x[1], reverse=True)
     return [{"intent": classes[r[0]], "probability": str(r[1])} for r in results]
 
-# Get response
 def get_response(intents_list, intents_json):
     if intents_list:
         tag = intents_list[0]["intent"]
@@ -58,13 +55,14 @@ def get_response(intents_list, intents_json):
                 return i["responses"]
     return "Sorry, I do not understand."
 
-# Streamlit UI
+# Streamlit App
+st.set_page_config(page_title="Breast Cancer Chatbot", page_icon="💬")
 st.title("🩺 Breast Cancer Chatbot")
-st.markdown("Ask me anything about breast cancer support, risk, symptoms, and more.")
+st.markdown("Ask anything about breast cancer: risk, symptoms, prevention, and more.")
 
-user_input = st.text_input("You:", placeholder="Type your question here...")
+user_input = st.text_input("You:", placeholder="Ask your question here...")
 
 if user_input:
-    ints = predict_class(user_input)
-    res = get_response(ints, intents)
-    st.markdown(f"**Bot:** {res}")
+    intents_result = predict_class(user_input)
+    response = get_response(intents_result, intents)
+    st.markdown(f"**Bot:** {response}")
